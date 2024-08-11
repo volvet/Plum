@@ -48,16 +48,23 @@ def as_variable(obj):
   if isinstance(obj, Variable):
     return obj
   return Variable(obj)
+
+def as_array(x):
+  if np.isscalar(x):
+    return np.array(x)
+  return x
     
 class Function:
   def __call__(self, *inputs):
     inputs = [as_variable(x) for x in inputs]
-    x = input.data
-    y = x ** 2
-    output = Variable(y)
+    xs = [x.data for x in inputs]
+    ys = self.forward(*xs)
+    if not isinstance(ys, tuple):
+      ys = (ys, )
+    output = Variable(as_array(ys))
     return output
   
-  def forward(self, x):
+  def forward(self, xs):
     raise NotImplementedError()
     
   def backward(self, gys):
