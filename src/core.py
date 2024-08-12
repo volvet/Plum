@@ -40,8 +40,18 @@ except ImportError:
 
 
 class Variable:
-  def __init__(self, data):
+  def __init__(self, data, name=None):
+    if data is not None:
+      if not isinstance(data, array_types):
+        raise TypeError('{} is not supported'.format(type(data)))
     self.data = data
+    self.name = name
+    self.grad = None
+    self.creator = None
+    self.generation = 0
+
+  def backward(self):
+    raise NotImplementedError()
     
   
 def as_variable(obj):
