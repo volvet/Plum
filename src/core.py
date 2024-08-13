@@ -51,7 +51,41 @@ class Variable:
     self.generation = 0
 
   def backward(self):
-    raise NotImplementedError()
+    if self.grad is None:
+      self.grad = np.ones_link(self.data)
+
+    funcs = [self.creator]
+    while funcs:
+      f = funcs.pop()
+      gys = [output.grad for output in f.outputs]
+      gxs = f.backward(*gys)
+      if not isinstance(gxs, tuple):
+        gxs = (gxs, )
+
+      for x, gx in zip(f.inputs, gxs):
+        if x.grad is not None:
+          x.grad = gx
+        else:
+          x.grad = x.grad + gx
+
+        if x.creator is not None:
+          funcs.append(x.creator)
+
+
+  def set_creator(self, creator):
+    self.creator = creator
+
+  @property
+  def shape(self):
+    return self.data.shape
+
+  @property
+  def ndim(self):
+    return self.data.ndim
+
+  @property
+  def size(self):
+    return self.data.size
     
   
 def as_variable(obj):
@@ -63,7 +97,7 @@ def as_array(x):
   if np.isscalar(x):
     return np.array(x)
   return x
-    
+
 class Function:
   def __call__(self, *inputs):
     inputs = [as_variable(x) for x in inputs]
@@ -71,7 +105,14 @@ class Function:
     ys = self.forward(*xs)
     if not isinstance(ys, tuple):
       ys = (ys, )
-    output = Variable(as_array(ys))
+    outputs = Variable(as_array(ys))
+
+    if Config.enable_backprop:
+      self.generation = max([x.generation for x in inputs])
+      for output in outputs:
+        output.set_creator(self)
+      self.inputs = inputs
+      self.output = outputs
     return output
   
   def forward(self, xs):
