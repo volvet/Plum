@@ -52,7 +52,7 @@ class Variable:
 
   def backward(self):
     if self.grad is None:
-      self.grad = np.ones_link(self.data)
+      self.grad = np.ones_like(self.data)
 
     funcs = []
     seen_set = set()
@@ -71,7 +71,7 @@ class Variable:
         gxs = (gxs, )
 
       for x, gx in zip(f.inputs, gxs):
-        if x.grad is not None:
+        if x.grad is None:
           x.grad = gx
         else:
           x.grad = x.grad + gx
@@ -121,7 +121,7 @@ class Function:
       for output in outputs:
         output.set_creator(self)
       self.inputs = inputs
-      self.output = outputs
+      self.outputs = outputs
     return output
   
   def forward(self, xs):
@@ -157,5 +157,9 @@ if __name__ == '__main__':
   print('train:', getattr(Config, 'train'))
   
   f = Add()
-  result = f(np.array(1), np.array(2))
+  a = Variable(np.array(1))
+  b = Variable(np.array(2))
+  result = f(a, b)
   assert result.data == 3
+  result.backward()
+  print(a.grad)

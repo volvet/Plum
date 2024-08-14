@@ -24,5 +24,9 @@ def test_Variable():
   
 def test_Add():
   f = Add()
-  result = f(np.array(1), np.array(2))
+  a = Variable(np.array(1))
+  b = Variable(np.array(2))
+  result = f(a, b)
   assert result.data == 3
+  result.backward()
+  assert a.grad == 1
