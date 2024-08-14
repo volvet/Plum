@@ -54,7 +54,15 @@ class Variable:
     if self.grad is None:
       self.grad = np.ones_link(self.data)
 
-    funcs = [self.creator]
+    funcs = []
+    seen_set = set()
+    def add_func(f):
+      if f not in seen_set:
+        funcs.append(f)
+        seen_set.add(f)
+        funcs.sort(key = lambda x: x.generation)
+
+    add_func(self.creator)
     while funcs:
       f = funcs.pop()
       gys = [output.grad for output in f.outputs]
@@ -69,11 +77,12 @@ class Variable:
           x.grad = x.grad + gx
 
         if x.creator is not None:
-          funcs.append(x.creator)
+          add_func(x.creator)
 
 
   def set_creator(self, creator):
     self.creator = creator
+    self.generation = creator.generation + 1
 
   @property
   def shape(self):
@@ -105,7 +114,7 @@ class Function:
     ys = self.forward(*xs)
     if not isinstance(ys, tuple):
       ys = (ys, )
-    outputs = Variable(as_array(ys))
+    outputs = [Variable(as_array(y)) for y in ys]
 
     if Config.enable_backprop:
       self.generation = max([x.generation for x in inputs])
@@ -120,8 +129,21 @@ class Function:
     
   def backward(self, gys):
     raise NotImplementedError()
-    
-    
+
+
+class Add(Function):
+  def forward(self, x0, x1):
+    self.x0_shape = x0.shape
+    self.x1_shape = x1.shape
+    y = x0 + x1
+    return y
+
+  def backward(self, gy):
+    return gy, gy
+
+def add(x0, x1):
+  return Add()(x0, x1)
+
 if __name__ == '__main__':
   data = np.array(1.0)
   x = Variable(data)
@@ -133,3 +155,7 @@ if __name__ == '__main__':
   with test_mode():
     print('train:', getattr(Config, 'train'))
   print('train:', getattr(Config, 'train'))
+  
+  f = Add()
+  result = f(np.array(1), np.array(2))
+  assert result.data == 3
