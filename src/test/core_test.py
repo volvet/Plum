@@ -12,6 +12,7 @@ import numpy as np
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 from core import Variable
 from core import Add
+from core import Mul
 
 
 
@@ -30,3 +31,13 @@ def test_Add():
   assert result.data == 3
   result.backward()
   assert a.grad == 1
+
+def test_Mul():
+  f = Mul()
+  a = Variable(np.array(2))
+  b = Variable(np.array(4))
+  result = f(a, b)
+  assert result.data == 8
+  result.backward()
+  assert a.grad == 4
+  assert b.grad == 2

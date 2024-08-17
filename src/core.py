@@ -159,6 +159,23 @@ class Add(Function):
 def add(x0, x1):
   return Add()(x0, x1)
 
+class Mul(Function):
+  def forward(self, x0, x1):
+    y = x0 * x1
+    return y
+
+  def backward(self, gy):
+    x0, x1 = self.inputs
+    x0 = x0.data
+    x1 = x1.data
+    gx0 = gy * x1
+    gx1 = gy * x0
+    return gx0, gx1
+
+def mul(x0, x1):
+  return Mul()(x0, x1)
+
+
 if __name__ == '__main__':
   data = np.array(1.0)
   x = Variable(data)
