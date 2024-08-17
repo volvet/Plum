@@ -201,13 +201,56 @@ def sub(x0, x1):
   x1 = as_array(x1)
   return Sub()(x0, x1)
 
+def rsub(x0, x1):
+  x1 = as_array(x1)
+  return Sub()(x1, x0)
+
+class Div(Function):
+  def forward(self, x0, x1):
+    return x0 / x1
+
+  def backward(self, gy):
+    x0, x1 = self.inputs
+    x0 = x0.data
+    x1 = x1.data
+    gx0 = gy / x1
+    gx1 = gy * (-x0) / (x1**2)
+    return gx0, gx1
+
+def div(x0, x1):
+  x1 = as_array(x1)
+  return Div()(x0, x1)
+
+def rdiv(x0, x1):
+  x1 = as_array(x1)
+  return Div()(x1, x0)
+
+class Pow(Function):
+  def __init__(self, c):
+    super().__init__()
+    self.c = c
+
+  def forward(self, x):
+    return x ** self.c
+
+  def backward(self, gy):
+    x = self.inputs[0].data
+    c = self.c
+    return c * x ** (c-1) * gy
+
+def pow(x, c):
+  return Pow(c)(x)
+
 def setup_variable():
   Variable.__add__ = add
   Variable.__radd__ = add
   Variable.__mul__ = mul
   Variable.__rmul__ = mul
   Variable.__sub__ = sub
-  Variable.__rsub__ = sub
+  Variable.__rsub__ = rsub
+  Variable.__truediv__ = div
+  Variable.__rtruediv__ = rdiv
+  Variable.__pow__ = pow
 
 if __name__ == '__main__':
   setup_variable()

@@ -11,9 +11,6 @@ import numpy as np
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 from core import Variable
-from core import Add
-from core import Mul
-from core import Sub
 from core import setup_variable
 
 
@@ -27,19 +24,17 @@ def test_Variable():
   x.data = data
   
 def test_Add():
-  f = Add()
   a = Variable(np.array(1))
   b = Variable(np.array(2))
-  result = f(a, b)
+  result = a + b
   assert result.data == 3
   result.backward()
   assert a.grad == 1
 
 def test_Mul():
-  f = Mul()
   a = Variable(np.array(2))
   b = Variable(np.array(4))
-  result = f(a, b)
+  result = a * b
   assert result.data == 8
   result.backward()
   assert a.grad == 4
@@ -54,3 +49,22 @@ def test_Sub():
   result.backward()
   assert a.grad == 1
   assert b.grad == -1
+
+def test_Div():
+  a = Variable(np.array(12))
+  b = Variable(np.array(3))
+  result = a / b
+  assert result.data == 4
+  result.backward()
+  assert a.grad == 1/3
+  assert b.grad == -12/9
+
+def test_pow():
+  a = Variable(np.array(2))
+  b = 3
+
+  result = a ** b
+  assert result.data == 8
+  result.backward()
+
+  assert a.grad == 12
