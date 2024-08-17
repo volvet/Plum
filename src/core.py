@@ -40,6 +40,8 @@ except ImportError:
 
 
 class Variable:
+  __array_priority__ = 200
+
   def __init__(self, data, name=None):
     if data is not None:
       if not isinstance(data, array_types):
@@ -111,7 +113,8 @@ class Variable:
       return 'Variable(None)'
     p = str(self.data).replace('\n', '\n' + ' ' * 9)
     return 'Variable(' + p + ')'
-  
+
+
 def as_variable(obj):
   if isinstance(obj, Variable):
     return obj
@@ -157,6 +160,7 @@ class Add(Function):
     return gy, gy
 
 def add(x0, x1):
+  x1 = as_array(x1)
   return Add()(x0, x1)
 
 class Mul(Function):
@@ -173,10 +177,40 @@ class Mul(Function):
     return gx0, gx1
 
 def mul(x0, x1):
+  x1 = as_array(x1)
   return Mul()(x0, x1)
 
+class Neg(Function):
+  def forward(self, x):
+    return -x
+
+  def backward(self, gy):
+    return -gy
+
+def neg(x):
+  return Neg()(x)
+
+class Sub(Function):
+  def forward(self, x0, x1):
+    return x0 - x1
+
+  def backward(self, gy):
+    return gy, -gy
+
+def sub(x0, x1):
+  x1 = as_array(x1)
+  return Sub()(x0, x1)
+
+def setup_variable():
+  Variable.__add__ = add
+  Variable.__radd__ = add
+  Variable.__mul__ = mul
+  Variable.__rmul__ = mul
+  Variable.__sub__ = sub
+  Variable.__rsub__ = sub
 
 if __name__ == '__main__':
+  setup_variable()
   data = np.array(1.0)
   x = Variable(data)
   print(x.data)
@@ -188,10 +222,9 @@ if __name__ == '__main__':
     print('train:', getattr(Config, 'train'))
   print('train:', getattr(Config, 'train'))
   
-  f = Add()
   a = Variable(np.array(1))
   b = Variable(np.array(2))
-  result = f(a, b)
+  result = a + b
   assert result.data == 3
   result.backward()
   print(a.grad)

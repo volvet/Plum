@@ -13,8 +13,11 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 from core import Variable
 from core import Add
 from core import Mul
+from core import Sub
+from core import setup_variable
 
 
+setup_variable()
 
 def test_Variable():
   data = np.array(1.0)
@@ -41,3 +44,13 @@ def test_Mul():
   result.backward()
   assert a.grad == 4
   assert b.grad == 2
+
+def test_Sub():
+  a = Variable(np.array(10.0))
+  b = Variable(np.array(4.5))
+  
+  result = a - b
+  assert result.data == 5.5
+  result.backward()
+  assert a.grad == 1
+  assert b.grad == -1
