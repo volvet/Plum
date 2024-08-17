@@ -50,7 +50,7 @@ class Variable:
     self.creator = None
     self.generation = 0
 
-  def backward(self):
+  def backward(self, retain_grad=False):
     if self.grad is None:
       self.grad = np.ones_like(self.data)
 
@@ -65,7 +65,7 @@ class Variable:
     add_func(self.creator)
     while funcs:
       f = funcs.pop()
-      gys = [output.grad for output in f.outputs]
+      gys = [output().grad for output in f.outputs]
       gxs = f.backward(*gys)
       if not isinstance(gxs, tuple):
         gxs = (gxs, )
@@ -78,6 +78,9 @@ class Variable:
 
         if x.creator is not None:
           add_func(x.creator)
+      if not retain_grad:
+        for output in f.outputs:
+          output().grad = None
 
 
   def set_creator(self, creator):
@@ -96,6 +99,18 @@ class Variable:
   def size(self):
     return self.data.size
     
+  @property
+  def dtype(self):
+    return self.data.dtype
+
+  def __len__(self):
+    return len(self.data)
+
+  def __repr__(self):
+    if self.data is None:
+      return 'Variable(None)'
+    p = str(self.data).replace('\n', '\n' + ' ' * 9)
+    return 'Variable(' + p + ')'
   
 def as_variable(obj):
   if isinstance(obj, Variable):
@@ -121,8 +136,8 @@ class Function:
       for output in outputs:
         output.set_creator(self)
       self.inputs = inputs
-      self.outputs = outputs
-    return output
+      self.outputs = [weakref.ref(output) for output in outputs]
+    return outputs if len(outputs) > 1 else outputs[0]
   
   def forward(self, xs):
     raise NotImplementedError()
@@ -150,7 +165,7 @@ if __name__ == '__main__':
   print(x.data)
   data = np.array([1, 2, 3])
   x.data = data
-  print(x.data)
+  print(x)
   print(getattr(Config, 'train'))
   with test_mode():
     print('train:', getattr(Config, 'train'))
@@ -163,3 +178,4 @@ if __name__ == '__main__':
   assert result.data == 3
   result.backward()
   print(a.grad)
+  print(a)
