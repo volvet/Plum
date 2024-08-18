@@ -9,12 +9,9 @@ import sys
 import os
 import numpy as np
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
-from core import Variable
-from core import setup_variable
+#sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
+from plum import Variable
 
-
-setup_variable()
 
 def test_Variable():
   data = np.array(1.0)
