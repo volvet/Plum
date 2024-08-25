@@ -89,6 +89,12 @@ class Variable:
     self.creator = creator
     self.generation = creator.generation + 1
 
+  def unchain(self):
+    self.creator = None
+
+  def cleargrad(self):
+    self.grad = None
+
   @property
   def shape(self):
     return self.data.shape
@@ -114,6 +120,11 @@ class Variable:
     p = str(self.data).replace('\n', '\n' + ' ' * 9)
     return 'Variable(' + p + ')'
 
+  def reshape(self, *shape):
+    if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+      shape = shape[0]
+    return reshape(self, shape)
+
 
 def as_variable(obj):
   if isinstance(obj, Variable):
@@ -127,6 +138,7 @@ def as_array(x):
 
 class Function:
   def __call__(self, *inputs):
+    print('inputs:', inputs)
     inputs = [as_variable(x) for x in inputs]
     xs = [x.data for x in inputs]
     ys = self.forward(*xs)
@@ -241,6 +253,40 @@ class Pow(Function):
 def pow(x, c):
   return Pow(c)(x)
 
+class Sin(Function):
+  def forward(self, x):
+    y = np.sin(x)
+    return y
+
+  def backward(self, gy):
+    x = self.inputs[0].data
+    gx = gy * np.cos(x)
+    return gx
+
+def sin(x):
+  return Sin()(x)
+
+
+class Reshape(Function):
+  def __init__(self, shape):
+    self.shape = shape
+
+  def forward(self, x):
+    self.x_shape = x.shape
+    y = x.reshape(self.shape)
+    return y
+
+  def backward(self, gy):
+    return reshape(gy, self.x_shape)
+
+def reshape(x, shape):
+  print(x.shape)
+  print(shape)
+  if x.shape == shape:
+    return as_variable(x)
+  return Reshape(shape)(x)
+
+
 def setup_variable():
   Variable.__add__ = add
   Variable.__radd__ = add
@@ -264,7 +310,7 @@ if __name__ == '__main__':
   with test_mode():
     print('train:', getattr(Config, 'train'))
   print('train:', getattr(Config, 'train'))
-  
+
   a = Variable(np.array(1))
   b = Variable(np.array(2))
   result = a + b
@@ -272,3 +318,7 @@ if __name__ == '__main__':
   result.backward()
   print(a.grad)
   print(a)
+
+  a = Variable(np.array([[1, 2, 3], [4, 5, 6]]))
+  b = a.reshape((3, 2))
+  print(a, b)
