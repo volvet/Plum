@@ -7,10 +7,13 @@ Created on Sun Aug 11 20:26:53 2024
 
 import sys
 import os
+import math
 import numpy as np
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 from plum import Variable
+from plum.core import sin
+from plum.core import cos
 
 
 def test_Variable():
@@ -65,3 +68,14 @@ def test_pow():
   result.backward()
 
   assert a.grad == 12
+
+def test_sin():
+  a = Variable(np.array(np.pi/6))
+  b = sin(a)
+  assert math.isclose(b.data, 0.5)
+
+def test_cos():
+  a = Variable(np.array(np.pi/3))
+  b = cos(a)
+  assert math.isclose(b.data, 0.5)
+

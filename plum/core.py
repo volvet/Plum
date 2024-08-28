@@ -266,6 +266,19 @@ class Sin(Function):
 def sin(x):
   return Sin()(x)
 
+class Cos(Function):
+  def forward(self, x):
+    y = np.cos(x)
+    return y
+
+  def backward(self, gy):
+    x, = self.inputs
+    gx = gy * -sin(x)
+    return gx
+
+def cos(x):
+  return Cos()(x)
+
 
 class Reshape(Function):
   def __init__(self, shape):
@@ -280,8 +293,6 @@ class Reshape(Function):
     return reshape(gy, self.x_shape)
 
 def reshape(x, shape):
-  print(x.shape)
-  print(shape)
   if x.shape == shape:
     return as_variable(x)
   return Reshape(shape)(x)
